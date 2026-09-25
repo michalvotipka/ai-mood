@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "${BACKEND_PORT:-43100}:43100"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-43200}:43200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
