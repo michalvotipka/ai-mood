@@ -21,6 +21,18 @@ nvm use
 (cd backend && npm install) && (cd frontend && npm install)
 ```
 
+## Environment variables
+
+Secrets live in a root `.env` file, which is gitignored. Only `.env.example` is committed.
+
+```bash
+cp .env.example .env   # then fill in OPENAI_API_KEY
+```
+
+`docker compose` passes `.env` to the **backend only**, so the key never reaches the browser bundle. After editing `.env`, restart with `docker compose up -d backend` (a plain restart doesn't re-read it).
+
+**Production (Vercel):** set `OPENAI_API_KEY` under Project → Settings → Environment Variables (Production, and Preview if needed), or run `vercel env add OPENAI_API_KEY production`. Don't prefix it with `VITE_`. Vite would then bake it into the public frontend code.
+
 ## Run
 
 ```bash

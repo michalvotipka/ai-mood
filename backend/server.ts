@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import './config.js';
 
 const PORT = Number(process.env.PORT) || 43100;
 
