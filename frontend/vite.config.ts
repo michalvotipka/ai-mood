@@ -8,5 +8,8 @@ export default defineConfig({
     port: 43200,
     strictPort: true,
     watch: { usePolling: true },
+    proxy: {
+      '/api': process.env.API_PROXY_TARGET || 'http://localhost:43100',
+    },
   },
 });

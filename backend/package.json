@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch server.ts",
-    "start": "tsx server.ts",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
     "typecheck": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -22,5 +22,12 @@
     "tsx": "^4.23.15",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.70.1"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@hono/zod-validator": "^0.9.1",
+    "ai": "^7.0.114",
+    "hono": "^4.13.9",
+    "zod": "^4.6.5"
   }
 }
