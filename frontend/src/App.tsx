@@ -1,3 +1,4 @@
+import { Mood } from './modules/mood';
 import chatIcon from './assets/icons/chat-emoji.svg';
 import styles from './App.module.css';
 
@@ -11,6 +12,7 @@ export const App = () => {
           <p className={styles.subtitle}>Analyze your conversations</p>
         </div>
       </header>
+      <Mood />
     </main>
   );
 };
