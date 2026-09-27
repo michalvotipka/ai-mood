@@ -308,6 +308,24 @@
   background: #f1f5f9;
 }
 
+.thumbPreview {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.thumbPreview img {
+  display: block;
+}
+
+.thumbPreview:hover img,
+.thumbPreview:focus-visible img {
+  border-color: #818cf8;
+}
+
 .thumbIndex {
   position: absolute;
   top: 4px;
@@ -343,6 +361,88 @@
 }
 
 .thumbActions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.preview {
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
+}
+
+.preview::backdrop {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.previewBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100dvh - 32px);
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.previewBody img {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.previewActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.previewHeader button,
+.previewActions button {
+  padding: 4px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.previewHeader button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.previewHeader button:hover:not(:disabled),
+.previewActions button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.previewActions button:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }

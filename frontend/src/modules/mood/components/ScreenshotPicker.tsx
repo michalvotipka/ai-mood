@@ -11,6 +11,7 @@ import {
   type Screenshot,
 } from '../utils/screenshots';
 import styles from './Mood.module.css';
+import { ScreenshotPreview } from './ScreenshotPreview';
 
 type ScreenshotPickerProps = {
   screenshots: Screenshot[];
@@ -31,6 +32,7 @@ export const ScreenshotPicker = ({
 }: ScreenshotPickerProps) => {
   const [notice, setNotice] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const locked = disabled || processing;
   const isFull = screenshots.length >= SCREENSHOTS_MAX_COUNT;
 
@@ -85,6 +87,12 @@ export const ScreenshotPicker = ({
     addFiles([...e.dataTransfer.files]);
   };
 
+  // The preview follows the moved screenshot so it stays on screen while being reordered.
+  const handlePreviewMove = (from: number, to: number) => {
+    onChange(moveItem(screenshots, from, to));
+    setPreviewIndex(to);
+  };
+
   const handleRemove = (screenshot: Screenshot) => {
     URL.revokeObjectURL(screenshot.previewUrl);
     onChange(screenshots.filter((s) => s !== screenshot));
@@ -125,7 +133,14 @@ export const ScreenshotPicker = ({
         <ol className={styles.thumbs}>
           {screenshots.map((screenshot, index) => (
             <li key={screenshot.previewUrl} className={styles.thumb}>
-              <img src={screenshot.previewUrl} alt={`Screenshot ${index + 1}`} />
+              <button
+                type="button"
+                className={styles.thumbPreview}
+                aria-label={`Show screenshot ${index + 1}`}
+                onClick={() => setPreviewIndex(index)}
+              >
+                <img src={screenshot.previewUrl} alt={`Screenshot ${index + 1}`} />
+              </button>
               <span className={styles.thumbIndex}>{index + 1}</span>
               <div className={styles.thumbActions}>
                 <button
@@ -156,6 +171,17 @@ export const ScreenshotPicker = ({
             </li>
           ))}
         </ol>
+      )}
+
+      {previewIndex !== null && (
+        <ScreenshotPreview
+          screenshots={screenshots}
+          index={previewIndex}
+          locked={locked}
+          onIndexChange={setPreviewIndex}
+          onMove={handlePreviewMove}
+          onClose={() => setPreviewIndex(null)}
+        />
       )}
     </div>
   );
