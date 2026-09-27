@@ -1,4 +1,4 @@
-import type { MoodAnalysis } from '../modules/mood/types';
+import type { MoodAnalysis } from '../modules/mood';
 import { api } from './client';
 
 export const analyzeMood = async (text: string): Promise<MoodAnalysis> => {

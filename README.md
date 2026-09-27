@@ -2,27 +2,11 @@
 
 Minimal full-stack TypeScript setup: Node.js backend + React (Vite) frontend, both running in Docker.
 
-## Structure
+## Architecture
 
-```
-backend/src/
-  index.ts          server entry (Hono on Node)
-  app.ts            app setup: middleware, routes, error handling
-  config/           env parsing & validation (zod)
-  routes/           URL → controller mapping
-  controllers/      request/response handling (HTTP layer)
-  services/         business logic, AI calls (no HTTP here)
-  schemas/          zod request schemas + inferred types
-  modules/<name>/   self-contained feature modules (schema, prompt, service, routes), e.g. mood
-  middleware/       shared middleware (validation, errors)
-
-frontend/src/
-  api/              fetch client + typed API calls
-  features/<name>/  components, hooks and types per feature (e.g. chat)
-  App.tsx           page composition
-
-docker-compose.yml
-```
+- **Feature modules.** Each feature lives in `modules/<name>/` on both backend and frontend (e.g. `mood`). A module is self-contained and exposes its public API only through its `index.ts`; import from there, not from its internals.
+- **Backend layers.** Within a module, `*.routes.ts` handles HTTP, `*.service.ts` holds business logic and AI calls (no HTTP here), `*.schema.ts` defines zod schemas and their inferred types, and `*.prompt.ts` holds the AI prompts.
+- **Shared code stays outside modules.** Env config, middleware and route mounting live at the top level of `backend/src`; the HTTP client lives in `frontend/src/api`.
 
 ## Requirements
 
@@ -80,6 +64,8 @@ docker compose exec frontend npm install <pkg>   # add a frontend dependency
 docker compose exec backend npm install <pkg>    # add a backend dependency
 docker compose exec backend npm run typecheck    # type-check backend
 docker compose exec frontend npm run typecheck   # type-check frontend
+docker compose exec backend npm run lint         # lint (also: lint:fix, format, format:check)
+docker compose exec frontend npm run lint
 ```
 
 After changing dependencies, rebuild and refresh the `node_modules` volumes: `docker compose up --build -V`.
