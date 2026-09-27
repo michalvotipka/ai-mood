@@ -1,4 +1,4 @@
-import { generateText, Output } from 'ai';
+import { generateText, NoObjectGeneratedError, Output } from 'ai';
 import { env } from '../../config/env.js';
 import type { MoodAnalysis } from './mood.schema.js';
 import { analyzeMood } from './mood.service.js';
@@ -12,7 +12,10 @@ import {
 
 export type MoodScreenshotsAnalysis = MoodAnalysis & { transcript: string };
 
-const transcribeScreenshot = async (image: File): Promise<ScreenshotTranscription> => {
+const requestTranscription = async (
+  mediaType: string,
+  data: Uint8Array,
+): Promise<ScreenshotTranscription> => {
   const { output } = await generateText({
     model: env.AI_OCR_MODEL,
     instructions: SCREENSHOT_SYSTEM_PROMPT,
@@ -24,11 +27,14 @@ const transcribeScreenshot = async (image: File): Promise<ScreenshotTranscriptio
     // Gemini 2.5 Flash thinks by default: with thinking off it read the message order just as well
     // (and caught more stickers) in half the time and output tokens. Ignored by other providers.
     providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
+    // A full screenshot transcribes to ~500 tokens. Caps a rare degenerate loop (the model repeating
+    // newlines until the output limit) so it fails fast instead of running for minutes.
+    maxOutputTokens: 4000,
     prompt: [
       {
         role: 'user',
         content: [
-          { type: 'file', mediaType: image.type, data: new Uint8Array(await image.arrayBuffer()) },
+          { type: 'file', mediaType, data },
           { type: 'text', text: 'Transcribe this screenshot.' },
         ],
       },
@@ -42,6 +48,17 @@ const transcribeScreenshot = async (image: File): Promise<ScreenshotTranscriptio
   // The model sometimes groups messages by side (left column, then right one) even when told
   // not to; the reported position puts them back in the order they appear on the screen.
   return { ...output, messages: output.messages.toSorted((a, b) => a.top - b.top) };
+};
+
+const transcribeScreenshot = async (image: File): Promise<ScreenshotTranscription> => {
+  const data = new Uint8Array(await image.arrayBuffer());
+  try {
+    return await requestTranscription(image.type, data);
+  } catch (err) {
+    // Now and then the model gets stuck in a loop and returns broken JSON; a second try usually passes.
+    if (!NoObjectGeneratedError.isInstance(err)) throw err;
+    return requestTranscription(image.type, data);
+  }
 };
 
 // Text quality (short, incoherent or [illegible] text) is the base; a hard-to-read screenshot
@@ -65,7 +82,7 @@ export const analyzeScreenshots = async ({
   const transcript = formatTranscript(mergeTranscriptions(pages), contactName);
   const imageQuality = pages.reduce((sum, page) => sum + page.imageQuality, 0) / pages.length;
 
-  const analysis = await analyzeMood({ text: transcript });
+  const analysis = await analyzeMood({ text: transcript }, { fromScreenshots: true });
   return {
     ...analysis,
     inputQuality: combineQuality(analysis.inputQuality, imageQuality),

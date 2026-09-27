@@ -59,7 +59,7 @@ export const screenshotTranscriptionSchema = z.object({
         text: z
           .string()
           .describe(
-            'Exact message text in the original language, including emoji; unreadable parts as [illegible], non-text content as [image], [sticker], [voice message] etc.',
+            'Exact message text in the original language; emoji as emoji characters, unreadable parts as [illegible], non-text content as [sticker: …], [image: …], [voice message] etc.',
           ),
         partial: z
           .boolean()

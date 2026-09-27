@@ -3,11 +3,13 @@ import type { ScreenshotTranscription, TranscribedMessage } from './screenshots.
 // Shortest visible fragment of a cut-off message that still counts as a match.
 const PARTIAL_MATCH_MIN_LENGTH = 8;
 
-// Compare letters and digits only, so small OCR differences in punctuation or spacing don't matter.
-// Emoji-only messages would normalize to '', so they're compared as they are.
+// Compare letters and digits only, so small OCR differences in punctuation, spacing or emoji
+// (😀 vs 😁) don't matter. Bracketed tags ([illegible], [sticker: …]) are left out too, the same
+// sticker can get a different description on each screenshot. Emoji-only messages are compared as they are.
 const normalize = (text: string) => {
   const collapsed = text.toLowerCase().replace(/\s+/g, ' ').trim();
   const lettersOnly = collapsed
+    .replace(/\[[^\]]*\]/g, ' ')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();

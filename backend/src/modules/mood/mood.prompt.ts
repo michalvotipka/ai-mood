@@ -23,6 +23,13 @@ Steps:
 3. Rate the overall tone on an integer scale 0–10:
    0 = very negative (hostile, angry, sad, dismissive), 5 = neutral / matter-of-fact, 10 = very positive (warm, enthusiastic, friendly).
    Consider word choice, emoji, punctuation, politeness, sarcasm and what is left unsaid, not just literal meaning.
+   In text transcribed from screenshots, stickers, GIFs and images appear as bracketed descriptions, e.g. [sticker: …];
+   weigh them like emoji — they often carry the tone of an otherwise neutral message.
+   Emoji in text transcribed from screenshots may be misread (e.g. crying read as laughing), so the words come first:
+   let an emoji strengthen or soften what the words say, but when it contradicts them (😂 under sad news, 😭 under
+   great news), treat it as a misread and ignore it completely — in the tone, the dynamics and the summary alike;
+   don't mention it or call the conversation ambiguous because of it. Leaving an emoji out is fine, reading
+   the opposite emotion into the conversation is not. [emoji] marks an emoji that couldn't be recognized — ignore it.
    In a conversation, the tone reflects the overall atmosphere of all participants, not just the most cheerful one.
 4. Only for a "conversation", rate the dynamics on an integer scale 0–10:
    0 = strained, awkward, conflictual, or one side clearly uninterested (short replies, ignoring questions, no follow-up),

@@ -6,7 +6,9 @@ export const SCREENSHOT_MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 // Largest file accepted from the user; it's resized below SCREENSHOT_MAX_BYTES before upload.
 export const SCREENSHOT_SOURCE_MAX_BYTES = 20 * 1024 * 1024;
 // Limit the width, not the longer side: phone screenshots are tall and the text must stay legible.
-const SCREENSHOT_RESIZE_MAX_WIDTH = 1000;
+// High enough to keep phone (1170–1290 px) and regular desktop screenshots at full size — Gemini
+// bills per image, not per pixel, and downscaling a desktop screenshot to 1000 px cost diacritics.
+const SCREENSHOT_RESIZE_MAX_WIDTH = 1600;
 const SCREENSHOT_RESIZE_QUALITY = 0.85;
 
 export type Screenshot = {

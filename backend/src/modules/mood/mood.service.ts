@@ -17,11 +17,20 @@ const truncateSummary = (summary: string) => {
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.-]+$/, '')}…`;
 };
 
-export const analyzeMood = async ({ text }: MoodRequest): Promise<MoodAnalysis> => {
+type AnalyzeMoodOptions = {
+  // The text was transcribed from screenshots, so its emoji may be misread.
+  fromScreenshots?: boolean;
+};
+
+export const analyzeMood = async (
+  { text }: MoodRequest,
+  { fromScreenshots = false }: AnalyzeMoodOptions = {},
+): Promise<MoodAnalysis> => {
+  const source = fromScreenshots ? ' (transcribed from screenshots)' : '';
   const { output } = await generateText({
     model: env.AI_MODEL,
     instructions: MOOD_SYSTEM_PROMPT,
-    prompt: `Analyze the following text:\n\n<text>\n${text}\n</text>`,
+    prompt: `Analyze the following text${source}:\n\n<text>\n${text}\n</text>`,
     output: Output.object({
       name: 'mood_analysis',
       description: 'Mood analysis of a conversation or a message',
