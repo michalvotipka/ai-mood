@@ -1,9 +1,11 @@
 import { useEffect, useEffectEvent, useState, type ChangeEvent, type DragEvent } from 'react';
 import {
-  isValidScreenshotFile,
+  isSupportedScreenshotFile,
   moveItem,
+  resizeScreenshot,
   SCREENSHOT_MAX_BYTES,
   SCREENSHOT_MEDIA_TYPES,
+  SCREENSHOT_SOURCE_MAX_BYTES,
   SCREENSHOTS_MAX_COUNT,
   toScreenshots,
   type Screenshot,
@@ -13,30 +15,47 @@ import styles from './Mood.module.css';
 type ScreenshotPickerProps = {
   screenshots: Screenshot[];
   disabled: boolean;
+  // Resizing is async; the picker and the form are locked meanwhile so `screenshots` can't change
+  // under it and the form can't be submitted without the images being prepared.
+  processing: boolean;
   onChange: (screenshots: Screenshot[]) => void;
+  onProcessingChange: (processing: boolean) => void;
 };
 
-export const ScreenshotPicker = ({ screenshots, disabled, onChange }: ScreenshotPickerProps) => {
+export const ScreenshotPicker = ({
+  screenshots,
+  disabled,
+  processing,
+  onChange,
+  onProcessingChange,
+}: ScreenshotPickerProps) => {
   const [notice, setNotice] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const locked = disabled || processing;
   const isFull = screenshots.length >= SCREENSHOTS_MAX_COUNT;
 
-  const addFiles = (files: File[]) => {
-    if (disabled || !files.length) return;
-    const valid = files.filter(isValidScreenshotFile);
-    const accepted = valid.slice(0, SCREENSHOTS_MAX_COUNT - screenshots.length);
+  const addFiles = async (files: File[]) => {
+    if (locked || !files.length) return;
+    const supported = files.filter(isSupportedScreenshotFile);
+    const accepted = supported.slice(0, SCREENSHOTS_MAX_COUNT - screenshots.length);
 
-    if (valid.length < files.length) {
+    onProcessingChange(true);
+    const resized = await Promise.all(accepted.map(resizeScreenshot));
+    onProcessingChange(false);
+    // Resizing falls back to the original, which may still be over the upload limit.
+    const uploadable = resized.filter((file) => file.size <= SCREENSHOT_MAX_BYTES);
+
+    if (supported.length < files.length || uploadable.length < resized.length) {
       setNotice(
-        `Skipped files that aren't PNG, JPEG or WebP up to ${SCREENSHOT_MAX_BYTES / 1024 / 1024} MB.`,
+        `Skipped files that aren't PNG, JPEG or WebP up to ${SCREENSHOT_SOURCE_MAX_BYTES / 1024 / 1024} MB.`,
       );
-    } else if (accepted.length < valid.length) {
+    } else if (accepted.length < supported.length) {
       setNotice(`You can upload at most ${SCREENSHOTS_MAX_COUNT} screenshots.`);
     } else {
       setNotice(null);
     }
-    if (accepted.length) {
-      onChange([...screenshots, ...toScreenshots(accepted)]);
+    if (uploadable.length) {
+      onChange([...screenshots, ...toScreenshots(uploadable)]);
     }
   };
 
@@ -76,7 +95,7 @@ export const ScreenshotPicker = ({ screenshots, disabled, onChange }: Screenshot
     <div className={styles.picker}>
       <label
         className={`${styles.dropzone} ${dragging ? styles.dropzoneActive : ''}`}
-        aria-disabled={disabled || isFull}
+        aria-disabled={locked || isFull}
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -89,12 +108,14 @@ export const ScreenshotPicker = ({ screenshots, disabled, onChange }: Screenshot
           className={styles.fileInput}
           accept={SCREENSHOT_MEDIA_TYPES.join(',')}
           multiple
-          disabled={disabled || isFull}
+          disabled={locked || isFull}
           onChange={handleSelect}
         />
-        <strong>Choose screenshots</strong>, drop them here or paste with Ctrl/Cmd+V
+        <strong>Choose screenshots</strong>Drop them here or paste with Ctrl/Cmd+V
         <span className={styles.hint}>
-          Up to {SCREENSHOTS_MAX_COUNT} images, oldest part of the conversation first
+          {processing
+            ? 'Preparing screenshots...'
+            : `Up to ${SCREENSHOTS_MAX_COUNT} images, oldest part of the conversation first`}
         </span>
       </label>
 
@@ -110,7 +131,7 @@ export const ScreenshotPicker = ({ screenshots, disabled, onChange }: Screenshot
                 <button
                   type="button"
                   aria-label="Move earlier"
-                  disabled={disabled || index === 0}
+                  disabled={locked || index === 0}
                   onClick={() => onChange(moveItem(screenshots, index, index - 1))}
                 >
                   ←
@@ -118,7 +139,7 @@ export const ScreenshotPicker = ({ screenshots, disabled, onChange }: Screenshot
                 <button
                   type="button"
                   aria-label="Remove"
-                  disabled={disabled}
+                  disabled={locked}
                   onClick={() => handleRemove(screenshot)}
                 >
                   ×
@@ -126,7 +147,7 @@ export const ScreenshotPicker = ({ screenshots, disabled, onChange }: Screenshot
                 <button
                   type="button"
                   aria-label="Move later"
-                  disabled={disabled || index === screenshots.length - 1}
+                  disabled={locked || index === screenshots.length - 1}
                   onClick={() => onChange(moveItem(screenshots, index, index + 1))}
                 >
                   →

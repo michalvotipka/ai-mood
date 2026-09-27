@@ -27,12 +27,21 @@ export const MoodForm = ({
   const [mode, setMode] = useState<MoodInputMode>('text');
   const [value, setValue] = useState('');
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const busy = disabled || processing;
+
+  const getSubmitLabel = () => {
+    if (disabled) return mode === 'text' ? 'Analyzing...' : 'Reading screenshots...';
+    if (processing) return 'Preparing screenshots...';
+    return 'Analyze';
+  };
+  const submitLabel = getSubmitLabel();
 
   const hasInput = mode === 'text' ? !!value.trim() : screenshots.length > 0;
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!hasInput || disabled) return;
+    if (!hasInput || busy) return;
     if (mode === 'text') {
       onSubmitText(value.trim());
     } else {
@@ -57,7 +66,7 @@ export const MoodForm = ({
             role="tab"
             aria-selected={mode === item.mode}
             className={styles.modeTab}
-            disabled={disabled}
+            disabled={busy}
             onClick={() => setMode(item.mode)}
           >
             {item.label}
@@ -75,19 +84,25 @@ export const MoodForm = ({
           autoFocus
         />
       ) : (
-        <ScreenshotPicker screenshots={screenshots} disabled={disabled} onChange={setScreenshots} />
+        <ScreenshotPicker
+          screenshots={screenshots}
+          disabled={disabled}
+          processing={processing}
+          onChange={setScreenshots}
+          onProcessingChange={setProcessing}
+        />
       )}
       <div className={styles.actions}>
         <button
           type="button"
           className={styles.reset}
           onClick={handleReset}
-          disabled={disabled || (!value && !screenshots.length && !hasAnalysis)}
+          disabled={busy || (!value && !screenshots.length && !hasAnalysis)}
         >
           Reset
         </button>
-        <button type="submit" className={styles.submit} disabled={disabled || !hasInput}>
-          {disabled ? (mode === 'text' ? 'Analyzing...' : 'Reading screenshots...') : 'Analyze'}
+        <button type="submit" className={styles.submit} disabled={busy || !hasInput}>
+          {submitLabel}
         </button>
       </div>
     </form>
