@@ -45,7 +45,7 @@ cp .env.example .env   # then fill in AI_GATEWAY_API_KEY
 
 - `AI_GATEWAY_API_KEY`: [Vercel AI Gateway](https://vercel.com/ai-gateway) key (Vercel dashboard → AI Gateway → API Keys). The app doesn't need to be deployed on Vercel.
 - `AI_MODEL` (optional): any model id from the [model list](https://vercel.com/ai-gateway/models), e.g. `openai/gpt-4.1-mini`, `openai/gpt-5-mini`. Defaults to `google/gemini-2.5-flash-lite` (set in `backend/src/config/env.ts`).
-- `AI_OCR_MODEL` (optional): vision model that transcribes uploaded screenshots to text before the mood analysis. Same default as `AI_MODEL`.
+- `AI_OCR_MODEL` (optional): vision model that transcribes uploaded screenshots to text before the mood analysis. Defaults to `google/gemini-2.5-flash` — `flash-lite` mixes up the order and sides of messages on wider screenshots.
 
 `docker compose` passes `.env` to the **backend only**, so the key never reaches the browser bundle. After editing `.env`, run `docker compose up -d backend` (a plain restart doesn't re-read it). In production, set the same variables in the hosting platform's environment settings.
 

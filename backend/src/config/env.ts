@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 const DEFAULT_AI_MODEL = 'google/gemini-2.5-flash-lite';
+// Flash-Lite mixes up the order and sides of messages on wider (desktop) screenshots.
+const DEFAULT_AI_OCR_MODEL = 'google/gemini-2.5-flash';
 
 // Environment is injected by docker compose (locally from .env) or by the hosting platform.
 const envSchema = z.object({
@@ -15,8 +17,8 @@ const envSchema = z.object({
   AI_OCR_MODEL: z
     .string()
     .trim()
-    .transform((v) => v || DEFAULT_AI_MODEL)
-    .default(DEFAULT_AI_MODEL),
+    .transform((v) => v || DEFAULT_AI_OCR_MODEL)
+    .default(DEFAULT_AI_OCR_MODEL),
 });
 
 export const env = envSchema.parse(process.env);

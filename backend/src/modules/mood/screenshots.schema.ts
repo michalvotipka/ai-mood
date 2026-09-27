@@ -42,6 +42,11 @@ export const screenshotTranscriptionSchema = z.object({
   messages: z
     .array(
       z.object({
+        top: z
+          .number()
+          .describe(
+            'Vertical position of the top edge of the message bubble: 0 = top of the image, 1000 = bottom',
+          ),
         side: z
           .enum(['me', 'other'])
           .describe(

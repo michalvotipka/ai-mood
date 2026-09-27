@@ -21,6 +21,9 @@ const transcribeScreenshot = async (image: File): Promise<ScreenshotTranscriptio
     // It doesn't stop made-up text on blurry images — that's what [illegible] and imageQuality are for.
     // Remove it for models that don't support it (OpenAI reasoning models) or advise against it (Gemini 3).
     temperature: 0,
+    // Gemini 2.5 Flash thinks by default: with thinking off it read the message order just as well
+    // (and caught more stickers) in half the time and output tokens. Ignored by other providers.
+    providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
     prompt: [
       {
         role: 'user',
@@ -36,7 +39,9 @@ const transcribeScreenshot = async (image: File): Promise<ScreenshotTranscriptio
       schema: screenshotTranscriptionSchema,
     }),
   });
-  return output;
+  // The model sometimes groups messages by side (left column, then right one) even when told
+  // not to; the reported position puts them back in the order they appear on the screen.
+  return { ...output, messages: output.messages.toSorted((a, b) => a.top - b.top) };
 };
 
 // Text quality (short, incoherent or [illegible] text) is the base; a hard-to-read screenshot

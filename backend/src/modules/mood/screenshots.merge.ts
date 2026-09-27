@@ -68,6 +68,7 @@ export const formatTranscript = (messages: TranscribedMessage[], contactName: st
   messages
     .map(({ side, author, text }) => {
       const speaker = side === 'me' ? 'Me' : (author ?? contactName ?? 'Other');
-      return `${speaker}: ${text}`;
+      // Line breaks inside a bubble are just wrapping; keep one message per line.
+      return `${speaker}: ${text.replace(/\s*\n\s*/g, ' ')}`;
     })
     .join('\n');
