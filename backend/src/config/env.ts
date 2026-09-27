@@ -11,6 +11,12 @@ const envSchema = z.object({
     .trim()
     .transform((v) => v || DEFAULT_AI_MODEL)
     .default(DEFAULT_AI_MODEL),
+  // Vision model that transcribes uploaded screenshots to text.
+  AI_OCR_MODEL: z
+    .string()
+    .trim()
+    .transform((v) => v || DEFAULT_AI_MODEL)
+    .default(DEFAULT_AI_MODEL),
 });
 
 export const env = envSchema.parse(process.env);

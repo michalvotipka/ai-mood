@@ -43,7 +43,11 @@ export const MoodResult = ({ result }: MoodResultProps) => {
         <span className={styles.badge}>{sentiment.label}</span>
         <span
           className={styles.quality}
-          title="How clear and coherent the input was for the analysis"
+          title={
+            result.transcript
+              ? 'Combines how legible the screenshots were with how clear and coherent the recognized text was'
+              : 'How clear and coherent the input was for the analysis'
+          }
         >
           Input quality: {Math.round(result.inputQuality * 100)}%
         </span>
@@ -59,6 +63,12 @@ export const MoodResult = ({ result }: MoodResultProps) => {
         >
           {showEnglish ? `Show original (${result.language})` : 'Show in English'}
         </button>
+      )}
+      {result.transcript && (
+        <details className={styles.transcript}>
+          <summary>Recognized text</summary>
+          <pre>{result.transcript}</pre>
+        </details>
       )}
     </div>
   );

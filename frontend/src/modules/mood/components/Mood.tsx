@@ -4,14 +4,15 @@ import { MoodResult } from './MoodResult';
 import styles from './Mood.module.css';
 
 export const Mood = () => {
-  const { result, loading, error, analyze, reset } = useMood();
+  const { result, loading, error, analyze, analyzeScreenshots, reset } = useMood();
 
   return (
     <section className={styles.mood}>
       <MoodForm
         disabled={loading}
         hasAnalysis={!!result || !!error}
-        onSubmit={analyze}
+        onSubmitText={analyze}
+        onSubmitScreenshots={analyzeScreenshots}
         onReset={reset}
       />
       {error && <p className={styles.error}>Error: {error}</p>}

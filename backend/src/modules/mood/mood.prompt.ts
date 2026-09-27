@@ -16,6 +16,10 @@ Steps:
    Lower it for unrelated or out-of-order fragments, unclear speakers, heavy truncation, very short input or noise.
    Calibration: 0.9–1 = coherent exchange or complete email; 0.5–0.7 = understandable but missing context or speakers;
    0.1–0.3 = disconnected fragments that don't follow each other, or only a word or two. Your tone and dynamics ratings are then mostly guesses.
+   Coherent is not enough — there must be enough content to judge the mood: a greeting exchange or 1–3 short messages
+   is at most 0.3–0.4 however clear it is.
+   The text may be transcribed from screenshots: [illegible] marks text that could not be read, so lower the quality
+   the more of it is missing or the less the remaining messages make sense together.
 3. Rate the overall tone on an integer scale 0–10:
    0 = very negative (hostile, angry, sad, dismissive), 5 = neutral / matter-of-fact, 10 = very positive (warm, enthusiastic, friendly).
    Consider word choice, emoji, punctuation, politeness, sarcasm and what is left unsaid, not just literal meaning.
