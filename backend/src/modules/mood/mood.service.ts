@@ -1,5 +1,7 @@
 import { generateText, Output } from 'ai';
 import { env } from '../../config/env.js';
+import { prisma, type AnalysisSource } from '../../db/index.js';
+import { getLogger } from '../../logger.js';
 import { MOOD_SYSTEM_PROMPT } from './mood.prompt.js';
 import {
   MOOD_SUMMARY_MAX_LENGTH,
@@ -49,4 +51,43 @@ export const analyzeMood = async (
       output.language.toLowerCase() === 'english' ? output.summaryEn : output.summary,
     ),
   };
+};
+
+type SaveMoodAnalysisInput = {
+  source: AnalysisSource;
+  // The analyzed text: the user's input, or the transcript of the screenshots.
+  inputText: string;
+  analysis: MoodAnalysis;
+};
+
+// Stores the final result of every analysis in the history. The history is secondary: a failed
+// write is only logged, so the user still gets the result they waited for.
+export const saveMoodAnalysis = async ({ source, inputText, analysis }: SaveMoodAnalysisInput) => {
+  const { language, kind, inputQuality, tone, dynamics, summaryEn, summary } = analysis;
+  try {
+    await prisma.moodAnalysis.create({
+      data: {
+        source,
+        inputText,
+        model: env.AI_MODEL,
+        ocrModel: source === 'screenshots' ? env.AI_OCR_MODEL : null,
+        language,
+        kind,
+        inputQuality,
+        tone,
+        dynamics,
+        summaryEn,
+        summary,
+      },
+    });
+  } catch (err) {
+    getLogger().error(err, 'Saving mood analysis failed');
+  }
+};
+
+// Analyzes the text the user entered and stores the result.
+export const analyzeText = async (request: MoodRequest): Promise<MoodAnalysis> => {
+  const analysis = await analyzeMood(request);
+  await saveMoodAnalysis({ source: 'text', inputText: request.text, analysis });
+  return analysis;
 };

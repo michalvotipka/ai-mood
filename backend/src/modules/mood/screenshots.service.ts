@@ -1,7 +1,7 @@
 import { generateText, NoObjectGeneratedError, Output } from 'ai';
 import { env } from '../../config/env.js';
 import type { MoodAnalysis } from './mood.schema.js';
-import { analyzeMood } from './mood.service.js';
+import { analyzeMood, saveMoodAnalysis } from './mood.service.js';
 import { formatTranscript, mergeTranscriptions } from './screenshots.merge.js';
 import { SCREENSHOT_SYSTEM_PROMPT } from './screenshots.prompt.js';
 import {
@@ -82,10 +82,11 @@ export const analyzeScreenshots = async ({
   const transcript = formatTranscript(mergeTranscriptions(pages), contactName);
   const imageQuality = pages.reduce((sum, page) => sum + page.imageQuality, 0) / pages.length;
 
-  const analysis = await analyzeMood({ text: transcript }, { fromScreenshots: true });
-  return {
-    ...analysis,
-    inputQuality: combineQuality(analysis.inputQuality, imageQuality),
-    transcript,
+  const textAnalysis = await analyzeMood({ text: transcript }, { fromScreenshots: true });
+  const analysis = {
+    ...textAnalysis,
+    inputQuality: combineQuality(textAnalysis.inputQuality, imageQuality),
   };
+  await saveMoodAnalysis({ source: 'screenshots', inputText: transcript, analysis });
+  return { ...analysis, transcript };
 };

@@ -2,7 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { requireAiKey } from '../../middleware/require-ai-key.js';
 import { fileUploads } from '../../plugins/file-uploads.js';
 import { moodRequestSchema } from './mood.schema.js';
-import { analyzeMood } from './mood.service.js';
+import { analyzeText } from './mood.service.js';
 import {
   moodScreenshotsRequestSchema,
   SCREENSHOT_MAX_BYTES,
@@ -20,7 +20,7 @@ export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post('/', { schema: { body: moodRequestSchema } }, async (request) => {
     try {
-      return await analyzeMood(request.body);
+      return await analyzeText(request.body);
     } catch (err) {
       request.log.error(err, 'Mood analysis failed');
       throw app.httpErrors.badGateway('Mood analysis failed');

@@ -27,6 +27,8 @@ model MoodAnalysis {
   // Analyzed text: the user's input, or the transcript of the screenshots.
   inputText    String         @map("input_text")
   model        String
+  // Vision model that transcribed the screenshots, null for text input.
+  ocrModel     String?        @map("ocr_model")
   language     String
   kind         MoodKind
   inputQuality Float          @map("input_quality") @db.Real
@@ -34,7 +36,6 @@ model MoodAnalysis {
   dynamics     Int?           @db.SmallInt
   summaryEn    String         @map("summary_en")
   summary      String
-  active       Boolean        @default(true)
 
   @@index([createdAt(sort: Desc)])
   @@map("mood_analyses")
