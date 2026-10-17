@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { databaseUrlSchema } from './database.js';
 
 const DEFAULT_AI_MODEL = 'google/gemini-2.5-flash-lite';
 // Flash-Lite mixes up the order and sides of messages on wider (desktop) screenshots.
@@ -21,7 +22,10 @@ const envSchema = z.object({
     .default(DEFAULT_AI_OCR_MODEL),
 });
 
-export const env = envSchema.parse(process.env);
+export const env = {
+  ...envSchema.parse(process.env),
+  DATABASE_URL: databaseUrlSchema.parse(process.env),
+};
 
 if (!env.AI_GATEWAY_API_KEY) {
   console.warn('AI_GATEWAY_API_KEY is not set.');
