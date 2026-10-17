@@ -1,8 +1,6 @@
-import { Hono } from 'hono';
-import { bodyLimit } from 'hono/body-limit';
-import { HTTPException } from 'hono/http-exception';
+import multipart from '@fastify/multipart';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { env } from '../../config/env.js';
-import { validate } from '../../middleware/validate.js';
 import { moodRequestSchema } from './mood.schema.js';
 import { analyzeMood } from './mood.service.js';
 import {
@@ -12,45 +10,53 @@ import {
 } from './screenshots.schema.js';
 import { analyzeScreenshots } from './screenshots.service.js';
 
-const requireApiKey = () => {
-  if (!env.AI_GATEWAY_API_KEY) {
-    throw new HTTPException(500, { message: 'AI_GATEWAY_API_KEY is not configured on the server' });
-  }
-};
+export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
+  // Registered inside this plugin, so multipart parsing and its limits apply only to mood routes.
+  await app.register(multipart, { limits: { fileSize: SCREENSHOT_MAX_BYTES } });
 
-export const moodRoutes = new Hono()
-  .post('/', validate('json', moodRequestSchema), async (c) => {
-    requireApiKey();
-
-    try {
-      const analysis = await analyzeMood(c.req.valid('json'));
-      return c.json(analysis);
-    } catch (err) {
-      console.error('Mood analysis failed:', err);
-      throw new HTTPException(502, { message: 'Mood analysis failed' });
+  app.addHook('preHandler', async () => {
+    if (!env.AI_GATEWAY_API_KEY) {
+      throw app.httpErrors.internalServerError(
+        'AI_GATEWAY_API_KEY is not configured on the server',
+      );
     }
-  })
-  .post(
-    '/screenshots',
-    bodyLimit({
-      // All images at max size plus room for the multipart overhead.
-      maxSize: SCREENSHOTS_MAX_COUNT * SCREENSHOT_MAX_BYTES + 1024 * 1024,
-      onError: (c) => c.json({ error: 'Upload is too large' }, 413),
-    }),
-    validate('form', moodScreenshotsRequestSchema),
-    async (c) => {
-      requireApiKey();
+  });
 
-      let analysis;
-      try {
-        analysis = await analyzeScreenshots(c.req.valid('form'));
-      } catch (err) {
-        console.error('Screenshot analysis failed:', err);
-        throw new HTTPException(502, { message: 'Screenshot analysis failed' });
+  app.post('/', { schema: { body: moodRequestSchema } }, async (request) => {
+    try {
+      return await analyzeMood(request.body);
+    } catch (err) {
+      request.log.error(err, 'Mood analysis failed');
+      throw app.httpErrors.badGateway('Mood analysis failed');
+    }
+  });
+
+  app.post('/screenshots', async (request) => {
+    const images: File[] = [];
+    for await (const part of request.files()) {
+      if (part.fieldname !== 'images') {
+        part.file.resume();
+        continue;
       }
-      if (!analysis) {
-        throw new HTTPException(422, { message: 'No conversation found in the screenshots' });
+      if (images.length === SCREENSHOTS_MAX_COUNT) {
+        throw app.httpErrors.badRequest(`At most ${SCREENSHOTS_MAX_COUNT} images are allowed`);
       }
-      return c.json(analysis);
-    },
-  );
+      images.push(
+        new File([new Uint8Array(await part.toBuffer())], part.filename, { type: part.mimetype }),
+      );
+    }
+    const input = moodScreenshotsRequestSchema.parse({ images });
+
+    let analysis;
+    try {
+      analysis = await analyzeScreenshots(input);
+    } catch (err) {
+      request.log.error(err, 'Screenshot analysis failed');
+      throw app.httpErrors.badGateway('Screenshot analysis failed');
+    }
+    if (!analysis) {
+      throw app.httpErrors.unprocessableEntity('No conversation found in the screenshots');
+    }
+    return analysis;
+  });
+};

@@ -1,6 +1,6 @@
 # ai-mood
 
-Minimal full-stack TypeScript setup: Node.js backend + React (Vite) frontend, both running in Docker.
+Minimal full-stack TypeScript setup: Node.js (Fastify) backend + React (Vite) frontend, both running in Docker.
 
 ## Architecture
 

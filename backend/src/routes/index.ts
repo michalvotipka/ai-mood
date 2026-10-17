@@ -1,4 +1,6 @@
-import { Hono } from 'hono';
+import type { FastifyPluginAsync } from 'fastify';
 import { moodRoutes } from '../modules/mood/index.js';
 
-export const apiRoutes = new Hono().route('/mood', moodRoutes);
+export const apiRoutes: FastifyPluginAsync = async (app) => {
+  app.register(moodRoutes, { prefix: '/mood' });
+};
