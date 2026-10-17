@@ -1,20 +1,11 @@
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
-import { ZodError } from 'zod';
 
 export const errorHandler = (err: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
   // Route schema validation (body, query, params).
   if (hasZodFastifySchemaValidationErrors(err)) {
     const issues = err.validation.map(({ instancePath, message }) => ({
       path: instancePath,
-      message,
-    }));
-    return reply.code(400).send({ error: 'Invalid request', issues });
-  }
-  // Manual validation in a handler (e.g. multipart uploads).
-  if (err instanceof ZodError) {
-    const issues = err.issues.map(({ path, message }) => ({
-      path: path.length ? `/${path.join('/')}` : '',
       message,
     }));
     return reply.code(400).send({ error: 'Invalid request', issues });

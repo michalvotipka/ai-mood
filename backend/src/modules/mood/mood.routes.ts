@@ -1,6 +1,6 @@
-import multipart from '@fastify/multipart';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { env } from '../../config/env.js';
+import { requireAiKey } from '../../middleware/require-ai-key.js';
+import { fileUploads } from '../../plugins/file-uploads.js';
 import { moodRequestSchema } from './mood.schema.js';
 import { analyzeMood } from './mood.service.js';
 import {
@@ -12,15 +12,11 @@ import { analyzeScreenshots } from './screenshots.service.js';
 
 export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
   // Registered inside this plugin, so multipart parsing and its limits apply only to mood routes.
-  await app.register(multipart, { limits: { fileSize: SCREENSHOT_MAX_BYTES } });
-
-  app.addHook('preHandler', async () => {
-    if (!env.AI_GATEWAY_API_KEY) {
-      throw app.httpErrors.internalServerError(
-        'AI_GATEWAY_API_KEY is not configured on the server',
-      );
-    }
+  await app.register(fileUploads, {
+    maxFileSize: SCREENSHOT_MAX_BYTES,
+    maxFiles: SCREENSHOTS_MAX_COUNT,
   });
+  app.addHook('preHandler', requireAiKey);
 
   app.post('/', { schema: { body: moodRequestSchema } }, async (request) => {
     try {
@@ -31,25 +27,10 @@ export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
     }
   });
 
-  app.post('/screenshots', async (request) => {
-    const images: File[] = [];
-    for await (const part of request.files()) {
-      if (part.fieldname !== 'images') {
-        part.file.resume();
-        continue;
-      }
-      if (images.length === SCREENSHOTS_MAX_COUNT) {
-        throw app.httpErrors.badRequest(`At most ${SCREENSHOTS_MAX_COUNT} images are allowed`);
-      }
-      images.push(
-        new File([new Uint8Array(await part.toBuffer())], part.filename, { type: part.mimetype }),
-      );
-    }
-    const input = moodScreenshotsRequestSchema.parse({ images });
-
+  app.post('/screenshots', { schema: { body: moodScreenshotsRequestSchema } }, async (request) => {
     let analysis;
     try {
-      analysis = await analyzeScreenshots(input);
+      analysis = await analyzeScreenshots(request.body);
     } catch (err) {
       request.log.error(err, 'Screenshot analysis failed');
       throw app.httpErrors.badGateway('Screenshot analysis failed');
