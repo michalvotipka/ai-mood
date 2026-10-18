@@ -42,4 +42,7 @@ jobs:
     needs: check
     steps:
       - uses: actions/checkout@v4
+      # Compose requires it in every command, but the build never uses it.
       - run: docker compose build
+        env:
+          SESSION_SECRET: not-used-by-the-build
