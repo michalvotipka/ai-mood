@@ -2,7 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { requireAiKey } from '../../middleware/require-ai-key.js';
 import { fileUploads } from '../../plugins/file-uploads.js';
 import { moodRequestSchema } from './mood.schema.js';
-import { analyzeText } from './mood.service.js';
+import { analyzeText, getMoodStats } from './mood.service.js';
 import {
   moodScreenshotsRequestSchema,
   SCREENSHOT_MAX_BYTES,
@@ -10,8 +10,8 @@ import {
 } from './screenshots.schema.js';
 import { analyzeScreenshots } from './screenshots.service.js';
 
-export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
-  // Registered inside this plugin, so multipart parsing and its limits apply only to mood routes.
+// Routes that run an analysis: they need the AI key and accept screenshot uploads.
+const analysisRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(fileUploads, {
     maxFileSize: SCREENSHOT_MAX_BYTES,
     maxFiles: SCREENSHOTS_MAX_COUNT,
@@ -40,4 +40,11 @@ export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
     }
     return analysis;
   });
+};
+
+export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
+  app.get('/stats', async () => getMoodStats());
+
+  // Own scope, so the AI key check and multipart parsing apply only to the analysis routes.
+  await app.register(analysisRoutes);
 };

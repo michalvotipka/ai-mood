@@ -57,3 +57,8 @@ export const moodAnalysisSchema = z.object({
 
 export type MoodRequest = z.infer<typeof moodRequestSchema>;
 export type MoodAnalysis = z.infer<typeof moodAnalysisSchema>;
+
+export type MoodStats = {
+  // Number of analyses stored in the history, across all users.
+  total: number;
+};

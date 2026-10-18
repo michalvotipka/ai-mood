@@ -1,4 +1,4 @@
-import { Mood } from './modules/mood';
+import { Mood, MoodCounter } from './modules/mood';
 import chatIcon from './assets/icons/chat-emoji.svg';
 import styles from './App.module.css';
 
@@ -10,6 +10,7 @@ export const App = () => {
         <div>
           <h1 className={styles.title}>AI Mood</h1>
           <p className={styles.subtitle}>Analyze your conversations</p>
+          <MoodCounter />
         </div>
       </header>
       <Mood />

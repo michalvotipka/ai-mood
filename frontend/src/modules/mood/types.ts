@@ -12,3 +12,8 @@ export type MoodAnalysis = {
   summaryEn: string;
   transcript?: string;
 };
+
+export type MoodStats = {
+  // Number of analyses stored in the history, across all users.
+  total: number;
+};

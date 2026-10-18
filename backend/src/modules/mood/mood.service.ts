@@ -8,6 +8,7 @@ import {
   moodAnalysisSchema,
   type MoodAnalysis,
   type MoodRequest,
+  type MoodStats,
 } from './mood.schema.js';
 
 // Cut on a word boundary so an over-long summary doesn't end mid-word.
@@ -91,3 +92,7 @@ export const analyzeText = async (request: MoodRequest): Promise<MoodAnalysis> =
   await saveMoodAnalysis({ source: 'text', inputText: request.text, analysis });
   return analysis;
 };
+
+export const getMoodStats = async (): Promise<MoodStats> => ({
+  total: await prisma.moodAnalysis.count(),
+});

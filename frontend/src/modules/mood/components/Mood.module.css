@@ -465,3 +465,15 @@
   line-height: 1.45;
   white-space: pre-wrap;
 }
+
+.counter {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.counter strong {
+  font-weight: 600;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
