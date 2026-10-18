@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [backend, frontend]
+        app: [backend, bff, frontend]
     defaults:
       run:
         working-directory: ${{ matrix.app }}

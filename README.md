@@ -45,8 +45,9 @@ The backend builds the connection string from these in `backend/src/config/datab
 docker compose up --build
 ```
 
-- Frontend: http://localhost:43200
+- Frontend: http://localhost:43200 (sign in as `user`/`user`, or `admin`/`admin` with the `admin` role)
 - Backend:  http://localhost:43100
+- Keycloak: http://localhost:43300 (admin console: `admin`/`admin`)
 - PostgreSQL: `localhost:<POSTGRES_PORT>` (from `.env`)
 
 Pending migrations are applied automatically when the backend starts.
@@ -62,6 +63,25 @@ Override the host ports with environment variables:
 ```bash
 BACKEND_PORT=43101 FRONTEND_PORT=43201 docker compose up --build
 ```
+
+## Authentication
+
+[Keycloak](https://www.keycloak.org/) with the realm from `keycloak/realm.json`, imported whenever the container is created, and a BFF (backend for frontend) in `bff/`. The browser never sees a token.
+
+```
+browser ── session cookie ──► BFF ── Bearer token ──► backend
+                               ├─ Keycloak (sign-in)
+                               └─ Redis (sessions)
+```
+
+1. **Sign-in** (`bff/src/auth.ts`): `/auth/login` sends the browser to Keycloak's login page (Authorization Code flow with PKCE). Keycloak returns to `/auth/callback`, where the BFF exchanges the code for tokens.
+2. **Session** (`bff/src/session.ts`): the tokens are stored in Redis, the browser gets only a random session ID in an `httpOnly`, `SameSite=Lax` cookie. It expires after 30 minutes without a request; Keycloak's session (8 hours at most) ends it too.
+3. **Proxy** (`bff/src/proxy.ts`): `/api/**` goes to the backend with `Authorization: Bearer <access token>` instead of the cookie. The BFF refreshes the access token shortly before it expires.
+4. **Backend** (`backend/src/plugins/authentication.ts`) verifies the token on every `/api` request (signature, issuer, audience, expiry) and puts the user, including roles, into `request.user`.
+5. **CSRF**: besides the `SameSite` cookie, the BFF requires the `X-Requested-With` header on anything but GET. The frontend's axios client always sends it.
+6. **Security headers**: the BFF sends [helmet](https://github.com/fastify/fastify-helmet)'s defaults. The page gets a Content Security Policy from `frontend/vite.config.ts` (only its own scripts, no framing): strict for `vite preview` of the build, with inline scripts and styles allowed in dev, which Vite needs. A production web server must send the same headers.
+
+`SESSION_SECRET` in `.env` signs the session cookie. Users registered in the app or changes made in the Keycloak admin console are lost when the Keycloak container is recreated.
 
 ## Useful commands
 
