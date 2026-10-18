@@ -1,10 +1,8 @@
-import { Hono } from 'hono';
-import { bodyLimit } from 'hono/body-limit';
-import { HTTPException } from 'hono/http-exception';
-import { env } from '../../config/env.js';
-import { validate } from '../../middleware/validate.js';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { requireAiKey } from '../../middleware/require-ai-key.js';
+import { fileUploads } from '../../plugins/file-uploads.js';
 import { moodRequestSchema } from './mood.schema.js';
-import { analyzeMood } from './mood.service.js';
+import { analyzeText, getMoodStats } from './mood.service.js';
 import {
   moodScreenshotsRequestSchema,
   SCREENSHOT_MAX_BYTES,
@@ -12,45 +10,41 @@ import {
 } from './screenshots.schema.js';
 import { analyzeScreenshots } from './screenshots.service.js';
 
-const requireApiKey = () => {
-  if (!env.AI_GATEWAY_API_KEY) {
-    throw new HTTPException(500, { message: 'AI_GATEWAY_API_KEY is not configured on the server' });
-  }
+// Routes that run an analysis: they need the AI key and accept screenshot uploads.
+const analysisRoutes: FastifyPluginAsyncZod = async (app) => {
+  await app.register(fileUploads, {
+    maxFileSize: SCREENSHOT_MAX_BYTES,
+    maxFiles: SCREENSHOTS_MAX_COUNT,
+  });
+  app.addHook('preHandler', requireAiKey);
+
+  app.post('/', { schema: { body: moodRequestSchema } }, async (request) => {
+    try {
+      return await analyzeText(request.body);
+    } catch (err) {
+      request.log.error(err, 'Mood analysis failed');
+      throw app.httpErrors.badGateway('Mood analysis failed');
+    }
+  });
+
+  app.post('/screenshots', { schema: { body: moodScreenshotsRequestSchema } }, async (request) => {
+    let analysis;
+    try {
+      analysis = await analyzeScreenshots(request.body);
+    } catch (err) {
+      request.log.error(err, 'Screenshot analysis failed');
+      throw app.httpErrors.badGateway('Screenshot analysis failed');
+    }
+    if (!analysis) {
+      throw app.httpErrors.unprocessableEntity('No conversation found in the screenshots');
+    }
+    return analysis;
+  });
 };
 
-export const moodRoutes = new Hono()
-  .post('/', validate('json', moodRequestSchema), async (c) => {
-    requireApiKey();
+export const moodRoutes: FastifyPluginAsyncZod = async (app) => {
+  app.get('/stats', async () => getMoodStats());
 
-    try {
-      const analysis = await analyzeMood(c.req.valid('json'));
-      return c.json(analysis);
-    } catch (err) {
-      console.error('Mood analysis failed:', err);
-      throw new HTTPException(502, { message: 'Mood analysis failed' });
-    }
-  })
-  .post(
-    '/screenshots',
-    bodyLimit({
-      // All images at max size plus room for the multipart overhead.
-      maxSize: SCREENSHOTS_MAX_COUNT * SCREENSHOT_MAX_BYTES + 1024 * 1024,
-      onError: (c) => c.json({ error: 'Upload is too large' }, 413),
-    }),
-    validate('form', moodScreenshotsRequestSchema),
-    async (c) => {
-      requireApiKey();
-
-      let analysis;
-      try {
-        analysis = await analyzeScreenshots(c.req.valid('form'));
-      } catch (err) {
-        console.error('Screenshot analysis failed:', err);
-        throw new HTTPException(502, { message: 'Screenshot analysis failed' });
-      }
-      if (!analysis) {
-        throw new HTTPException(422, { message: 'No conversation found in the screenshots' });
-      }
-      return c.json(analysis);
-    },
-  );
+  // Own scope, so the AI key check and multipart parsing apply only to the analysis routes.
+  await app.register(analysisRoutes);
+};

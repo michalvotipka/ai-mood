@@ -1,4 +1,4 @@
-import type { MoodAnalysis } from '../modules/mood';
+import type { MoodAnalysis, MoodStats } from '../modules/mood';
 import { api } from './client';
 
 export const analyzeMood = async (text: string): Promise<MoodAnalysis> => {
@@ -13,5 +13,10 @@ export const analyzeMoodScreenshots = async (images: File[]): Promise<MoodAnalys
   const { data } = await api.post<MoodAnalysis>('/mood/screenshots', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return data;
+};
+
+export const getMoodStats = async (): Promise<MoodStats> => {
+  const { data } = await api.get<MoodStats>('/mood/stats');
   return data;
 };

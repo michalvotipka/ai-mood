@@ -1,12 +1,24 @@
-import type { ErrorHandler, NotFoundHandler } from 'hono';
-import { HTTPException } from 'hono/http-exception';
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
 
-export const errorHandler: ErrorHandler = (err, c) => {
-  if (err instanceof HTTPException) {
-    return c.json({ error: err.message }, err.status);
+export const errorHandler = (err: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
+  // Route schema validation (body, query, params).
+  if (hasZodFastifySchemaValidationErrors(err)) {
+    const issues = err.validation.map(({ instancePath, message }) => ({
+      path: instancePath,
+      message,
+    }));
+    return reply.code(400).send({ error: 'Invalid request', issues });
   }
-  console.error('Unhandled error:', err);
-  return c.json({ error: 'Internal server error' }, 500);
+  // HTTP errors thrown on purpose (@fastify/sensible httpErrors) and Fastify's own errors.
+  if (err.statusCode) {
+    if (err.statusCode >= 500) request.log.error(err);
+    const message = err.statusCode === 413 ? 'Upload is too large' : err.message;
+    return reply.code(err.statusCode).send({ error: message });
+  }
+  request.log.error(err, 'Unhandled error');
+  return reply.code(500).send({ error: 'Internal server error' });
 };
 
-export const notFoundHandler: NotFoundHandler = (c) => c.json({ error: 'Not found' }, 404);
+export const notFoundHandler = (_request: FastifyRequest, reply: FastifyReply) =>
+  reply.code(404).send({ error: 'Not found' });

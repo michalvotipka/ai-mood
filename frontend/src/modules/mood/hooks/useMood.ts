@@ -1,34 +1,29 @@
-import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { analyzeMood, analyzeMoodScreenshots } from '../../../api/mood';
 import { getErrorMessage } from '../../../api/client';
-import type { MoodAnalysis } from '../types';
+import { moodStatsKey } from './useMoodStats';
+
+type MoodInput = { mode: 'text'; text: string } | { mode: 'screenshots'; images: File[] };
 
 export const useMood = () => {
-  const [result, setResult] = useState<MoodAnalysis | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (input: MoodInput) =>
+      input.mode === 'text' ? analyzeMood(input.text) : analyzeMoodScreenshots(input.images),
+    // Every successful analysis is stored, so the counter is out of date.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: moodStatsKey }),
+  });
 
-  const run = async (request: () => Promise<MoodAnalysis>) => {
-    setError(null);
-    setLoading(true);
-    try {
-      const result = await request();
-      setResult(result);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
+  const analyze = (text: string) => mutation.mutate({ mode: 'text', text });
+
+  const analyzeScreenshots = (images: File[]) => mutation.mutate({ mode: 'screenshots', images });
+
+  return {
+    result: mutation.data ?? null,
+    loading: mutation.isPending,
+    error: mutation.error ? getErrorMessage(mutation.error) : null,
+    analyze,
+    analyzeScreenshots,
+    reset: mutation.reset,
   };
-
-  const analyze = (text: string) => run(() => analyzeMood(text));
-
-  const analyzeScreenshots = (images: File[]) => run(() => analyzeMoodScreenshots(images));
-
-  const reset = () => {
-    setResult(null);
-    setError(null);
-  };
-
-  return { result, loading, error, analyze, analyzeScreenshots, reset };
 };

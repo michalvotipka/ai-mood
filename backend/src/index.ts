@@ -1,9 +1,8 @@
-import { serve } from '@hono/node-server';
-import { app } from './app.js';
+import { buildApp } from './app.js';
 import { env } from './config/env.js';
 
-serve({ fetch: app.fetch, port: env.PORT }, ({ port }) => {
-  console.log(
-    `Backend listening on port ${port} (model: ${env.AI_MODEL}, OCR model: ${env.AI_OCR_MODEL})`,
-  );
-});
+const app = buildApp();
+
+// Docker publishes the port from outside the container, so listen on all interfaces, not just localhost.
+await app.listen({ port: env.PORT, host: '0.0.0.0' });
+app.log.info(`AI model: ${env.AI_MODEL}, OCR model: ${env.AI_OCR_MODEL}`);

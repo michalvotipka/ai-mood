@@ -1,2 +1,3 @@
 export { Mood } from './components/Mood';
-export type { MoodAnalysis } from './types';
+export { MoodCounter } from './components/MoodCounter';
+export type { MoodAnalysis, MoodStats } from './types';
