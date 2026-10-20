@@ -31,7 +31,7 @@ resource "aws_vpc_security_group_ingress_rule" "ssh" {
 
 resource "aws_vpc_security_group_ingress_rule" "http" {
   security_group_id = aws_security_group.server.id
-  description       = "HTTP, redirected to HTTPS by Caddy (and Let's Encrypt challenges)"
+  description       = "HTTP, redirected to HTTPS by Caddy (and Lets Encrypt challenges)"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 80
@@ -58,7 +58,7 @@ resource "aws_vpc_security_group_ingress_rule" "http3" {
 
 resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.server.id
-  description       = "Outgoing traffic (packages, images, Let's Encrypt, AI Gateway)"
+  description       = "Outgoing traffic (packages, images, Lets Encrypt, AI Gateway)"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
@@ -68,6 +68,7 @@ resource "aws_instance" "server" {
   instance_type          = var.instance_type
   key_name               = aws_key_pair.deploy.key_name
   vpc_security_group_ids = [aws_security_group.server.id]
+  iam_instance_profile   = aws_iam_instance_profile.server.name
 
   user_data = templatefile("${path.module}/user-data.sh", {
     repository_url = var.repository_url

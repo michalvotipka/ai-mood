@@ -26,3 +26,12 @@ output "keycloak_admin_tunnel" {
   description = "Then open http://localhost:48080/admin/"
   value       = "ssh -N -L 48080:localhost:48080 ubuntu@${local.ip}"
 }
+
+output "region" {
+  value = var.region
+}
+
+output "secret_name" {
+  description = "Configuration of the app in Secrets Manager, filled by deploy/init-secret.sh."
+  value       = aws_secretsmanager_secret.app.name
+}

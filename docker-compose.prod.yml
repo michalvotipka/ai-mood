@@ -1,6 +1,6 @@
-# Production stack on a single server (see deploy/README.md):
-#   docker compose -f docker-compose.prod.yml up -d --build
-# Variables come from .env next to this file on the server (template: deploy/prod.env.example).
+# Production stack on a single server (see deploy/README.md), run through deploy/compose.sh:
+#   ./deploy/compose.sh up -d --build
+# which passes the variables from the AWS Secrets Manager secret (filled by deploy/init-secret.sh).
 # Only Caddy (web) is published to the internet; Keycloak is bound to localhost:48080 for the
 # admin console through an SSH tunnel.
 
