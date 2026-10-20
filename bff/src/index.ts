@@ -8,6 +8,9 @@ import { registerSession } from './session.js';
 
 const app = Fastify({
   logger: env.NODE_ENV === 'production' ? true : { transport: { target: 'pino-pretty' } },
+  // Reachable only through a proxy (Vite locally, Caddy in production). Its X-Forwarded-Proto tells
+  // whether the browser used HTTPS, without which the secure session cookie isn't set.
+  trustProxy: true,
 });
 
 // Security headers (nosniff, HSTS, no framing, ...) on every response of the BFF.

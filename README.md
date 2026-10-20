@@ -83,6 +83,10 @@ browser ── session cookie ──► BFF ── Bearer token ──► backen
 
 `SESSION_SECRET` in `.env` signs the session cookie. Users registered in the app or changes made in the Keycloak admin console are lost when the Keycloak container is recreated.
 
+## Deployment
+
+Production runs on a single AWS EC2 server with `docker-compose.prod.yml`, the server is created by Terraform. See [deploy/README.md](deploy/README.md).
+
 ## Useful commands
 
 ```bash

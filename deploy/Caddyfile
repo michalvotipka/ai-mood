@@ -1,0 +1,35 @@
+# The only service published to the internet. Caddy gets and renews the Let's Encrypt certificates
+# for both domains by itself, as soon as their DNS points to this server.
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	# Sign-in and the API go to the BFF, on the app's own origin (first-party session cookie).
+	@bff path /auth/* /api/*
+	handle @bff {
+		reverse_proxy bff:43400
+	}
+
+	# The built app. Unknown paths get index.html, the client-side router handles them.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+
+		# The same policy as `vite preview` in frontend/vite.config.ts.
+		header {
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+			Strict-Transport-Security "max-age=31536000"
+		}
+	}
+}
+
+{$AUTH_DOMAIN} {
+	# The admin console isn't public. It's reachable through an SSH tunnel, see deploy/README.md.
+	@admin path /admin /admin/*
+	respond @admin 404
+
+	reverse_proxy keycloak:8080
+}
