@@ -18,7 +18,8 @@ const keycloak = new oidc.Configuration(
   env.KEYCLOAK_CLIENT_ID,
   env.KEYCLOAK_CLIENT_SECRET,
 );
-if (env.NODE_ENV !== 'production') oidc.allowInsecureRequests(keycloak);
+// The internal URL is plain HTTP inside the Docker network (also in production, behind the proxy).
+if (internalUrl.startsWith('http:')) oidc.allowInsecureRequests(keycloak);
 
 const redirectUri = `${env.APP_URL}/auth/callback`;
 // Refresh the access token when it expires within this time.
