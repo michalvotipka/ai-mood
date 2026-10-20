@@ -9,7 +9,7 @@ ssh "ubuntu@$host" '
   set -eu
   cd ai-mood
   git pull --ff-only
-  docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+  ./deploy/compose.sh up -d --build --remove-orphans
   docker image prune -f
-  docker compose -f docker-compose.prod.yml ps
+  ./deploy/compose.sh ps
 '
